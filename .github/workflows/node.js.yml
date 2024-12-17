@@ -1,49 +1,55 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# This workflow builds, tests, and pushes a Docker image for a React app
 
-name: Node.js CI
+name: CI/CD for React App
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "main" ] # Trigger on push to master or main
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "main" ] # Trigger on pull request to master or main
 
 jobs:
-  build:
-
+  # Job 1: Build and Test React App
+  build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [16]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [16] # Define Node.js version
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
-    name: Build and Push Docker Image
+      # Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-on:
-  push:
-    branches:
-      - main # Trigger the workflow when code is pushed to the main branch
+      # Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-jobs:
-  build-and-push:
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Build React app
+      - name: Build React app
+        run: npm run build --if-present
+
+      # Run tests
+      - name: Run tests
+        run: npm test
+
+  # Job 2: Build and Push Docker Image
+  build-and-push-docker:
+    needs: build-and-test # Only run this job if build-and-test succeeds
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
+      # Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -52,14 +58,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build the Docker image
-      - name: Build Docker Image
+      # Build Docker image
+      - name: Build Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/my-react-app:latest .
 
-      # Push the Docker image to Docker Hub
-      - name: Push Docker Image
+      # Push Docker image
+      - name: Push Docker image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/my-react-app:latest
-
-    
