@@ -37,6 +37,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Set environment variables (if needed)
+      - name: Set environment variables
+        run: |
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
+
       # Build React app with verbose logging
       - name: Build React app
         run: |
@@ -44,36 +49,7 @@ jobs:
           npm run build || (echo "Build failed!" && exit 1)
 
       # Run tests with verbose output
-      - name: Run tests
+      - name: Run tests with verbose logging
         run: |
           echo "Running Tests..."
           npm test -- --verbose || (echo "Tests failed!" && exit 1)
-
-  # Job 2: Build and Push Docker Image
-  build-and-push-docker:
-    needs: build-and-test # Only run this job if build-and-test succeeds
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checkout repository
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Log in to Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # Build Docker image
-      - name: Build Docker image
-        run: |
-          echo "Building Docker Image..."
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-react-app:latest .
-
-      # Push Docker image
-      - name: Push Docker image
-        run: |
-          echo "Pushing Docker Image..."
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-react-app:latest
