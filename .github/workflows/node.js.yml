@@ -1,4 +1,4 @@
-=# This workflow builds, tests, and pushes a Docker image for a React app
+# This workflow builds, tests, and pushes a Docker image for a React app
 
 name: CI/CD for React App
 
